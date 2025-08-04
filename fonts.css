@@ -1,0 +1,41 @@
+@font-face {
+    font-family: 'Computer Modern';
+    src: url("./fonts/CMU_Serif_Roman.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Computer Modern';
+    src: url("./fonts/CMU_Serif_Italic.otf") format("opentype");
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Noto Sans';
+    src: local('Noto Sans'), url('./fonts/NotoSans-Medium.ttf');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Noto Sans';
+    src: local('Noto Sans'), url('./fonts/NotoSans-Bold.ttf');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Noto Sans';
+    src: local('Noto Sans'), url('./fonts/NotoSans-BoldItalic.ttf');
+    font-weight: bold;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Noto Sans';
+    src: local('Noto Sans'), url('./fonts/NotoSans-Italic.ttf');
+    font-weight: normal;
+    font-style: italic;
+}

@@ -1,0 +1,88 @@
+@import url("./catppuccin.css");
+@import url("./fonts.css");
+
+:root {
+    --text: var(--ctp-latte-text);
+    --bg: var(--ctp-latte-base);
+    --surface: var(--ctp-latte-surface0);
+    --primary: #bd8fcfff;
+    font-family: sans-serif;
+}
+
+header {
+    color: black
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text: var(--ctp-mocha-text);
+        --bg: var(--ctp-mocha-base);
+        --surface: var(--ctp-mocha-surface0);
+    }
+
+    header {
+        color: white;
+    }
+}
+
+a {
+    color: var(--primary)
+}
+
+pre:has(code) {
+    padding: 10px 15px;
+    background-color: var(--ctp-mocha-mantle) !important;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    overflow-x: scroll;
+}
+
+code:not(pre code) {
+    padding: 4px 7px;
+    background-color: var(--surface);
+    border-radius: 2px;
+    font-size: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Computer Modern';
+    margin-bottom: -10px;
+}
+
+body {
+    padding: 0 10px;
+}
+
+header h1 {
+    margin: 0;
+}
+
+html {
+    margin: 0;
+    padding: 0;
+    color: var(--text);
+    background-color: var(--bg);
+}
+
+article {
+    max-width: 75ch;
+    margin: auto;
+}
+
+.butterfly {
+    height: 1em;
+    vertical-align: middle;
+}
+
+.qed {
+    margin-left: 5px;
+}
+
+.bottom-spacer {
+    height: max(25vh, 100px);
+}
+
+.post-listing p {
+    all: unset;
+}
