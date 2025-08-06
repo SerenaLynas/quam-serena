@@ -58,7 +58,7 @@
 </span><span style="color:#cdd6f4;">    </span><span style="color:#89b4fa;">bar</span><span style="color:#9399b2;">()</span><span style="color:#94e2d5;">?</span><span style="color:#9399b2;">;
 </span><span style="color:#9399b2;">}
 </span></code></pre>
-<p>This works nicely, but the <code>From&lt;...&gt;</code> impl's are a bit annoying to write. It would be nice to automatically derive them -- and that's where the crate <a href="https://lib.rs/crates/derive_more"><code>derive_more</code></a> comes in:</p>
+<p>This works nicely, but the <code>From&lt;...&gt;</code> impl's are a bit annoying to write. It would be nice to automatically derive them — and that's where the crate <a href="https://lib.rs/crates/derive_more"><code>derive_more</code></a> comes in:</p>
 <pre style="background-color:#1e1e2e;"><code class="language-rust"><span style="color:#fab387;">#</span><span style="color:#f9e2af;">[derive(Debug, From)]
 </span><span style="color:#cba6f7;">enum </span><span style="color:#f9e2af;">FoobarError </span><span style="color:#9399b2;">{
 </span><span style="color:#cdd6f4;">    FooError</span><span style="color:#9399b2;">(</span><span style="color:#cdd6f4;">FooError</span><span style="color:#9399b2;">),
