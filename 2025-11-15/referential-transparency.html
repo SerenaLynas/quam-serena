@@ -1,0 +1,89 @@
+<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, height=device-height, initial-scale=1"><link rel="stylesheet" href="/main.css"><title>Referential transparency
+</title><link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="shortcut icon" href="/favicon.ico"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="quam serena"><link rel="manifest" href="/site.webmanifest"></head><body><header><h1><a style="all: unset; cursor: pointer" href="/">quam serena</a></h1></header><main><article><p><em>I am currently looking for a job! If you're hiring a new grad in 2026 for for Rust, TypeScript, or React, feel free to shoot me an email at serena (at) quamserena.com.</em></p>
+<h1>Referential transparency</h1>
+<p>From a theory perspective, referential transparency is <a href="https://stackoverflow.com/a/11740176/11485785">complicated</a> and idiosyncratic definitions common. For the purposes of this post I'll focus on the following definition of referential transparency:</p>
+<blockquote>
+<p>A term is referentially transparent iff every occurrence of that term can be replaced by that term's definition and vice-versa without materially changing the program.</p>
+</blockquote>
+<p>In other words, we want to be able to transparently swap out a term for the definition that it references without changing the program.</p>
+<p>For example, in OCaml, we have</p>
+<pre style="background-color:#1e1e2e;"><code class="language-ocaml"><span style="color:#cba6f7;">let </span><span style="color:#89b4fa;">add </span><span style="color:#eba0ac;">x y </span><span style="color:#94e2d5;">=</span><span style="color:#cdd6f4;"> x </span><span style="color:#94e2d5;">+</span><span style="color:#cdd6f4;"> y </span><span style="color:#cba6f7;">in
+</span><span style="color:#cdd6f4;">print_endline </span><span style="color:#a6e3a1;">&quot;The sum is:&quot;</span><span style="color:#9399b2;">;
+</span><span style="color:#cdd6f4;">print_endline </span><span style="color:#94e2d5;">@@</span><span style="color:#cdd6f4;"> string_of_int </span><span style="color:#94e2d5;">@@</span><span style="color:#cdd6f4;"> add </span><span style="color:#fab387;">1 2
+</span></code></pre>
+<p>in which the term <code>add 1 2</code> can be freely replaced by its definition <code>x + y</code> without changing program behavior:</p>
+<pre style="background-color:#1e1e2e;"><code class="language-ocaml"><span style="color:#cdd6f4;">print_endline </span><span style="color:#94e2d5;">@@</span><span style="color:#cdd6f4;"> string_of_int </span><span style="color:#94e2d5;">@@ </span><span style="color:#fab387;">1 </span><span style="color:#94e2d5;">+ </span><span style="color:#fab387;">2
+</span></code></pre>
+<p>So, we can conclude that the application of <code>add</code> is referentially transparent. Let's try adding a side effect to <code>add</code> and see what happens:</p>
+<pre style="background-color:#1e1e2e;"><code class="language-ocaml"><span style="color:#cba6f7;">let </span><span style="color:#89b4fa;">add </span><span style="color:#eba0ac;">x y </span><span style="color:#94e2d5;">= </span><span style="color:#cdd6f4;">(print_endline </span><span style="color:#a6e3a1;">&quot;Adding...&quot;</span><span style="color:#9399b2;">;</span><span style="color:#cdd6f4;"> x </span><span style="color:#94e2d5;">+</span><span style="color:#cdd6f4;"> y) </span><span style="color:#cba6f7;">in
+</span><span style="color:#cdd6f4;">print_endline </span><span style="color:#a6e3a1;">&quot;The sum is:&quot;</span><span style="color:#9399b2;">;
+</span><span style="color:#cdd6f4;">print_endline </span><span style="color:#94e2d5;">@@</span><span style="color:#cdd6f4;"> string_of_int </span><span style="color:#94e2d5;">@@</span><span style="color:#cdd6f4;"> add </span><span style="color:#fab387;">1 2
+</span></code></pre>
+<p>We get:</p>
+<pre style="background-color:#1e1e2e;"><code><span style="color:#cdd6f4;">The sum is:
+</span><span style="color:#cdd6f4;">Adding...
+</span><span style="color:#cdd6f4;">3
+</span></code></pre>
+<p>Substituting <code>add</code>, we have</p>
+<pre style="background-color:#1e1e2e;"><code class="language-ocaml"><span style="color:#cdd6f4;">print_endline </span><span style="color:#a6e3a1;">&quot;The sum is:&quot;</span><span style="color:#9399b2;">;
+</span><span style="color:#cdd6f4;">print_endline </span><span style="color:#94e2d5;">@@</span><span style="color:#cdd6f4;"> string_of_int </span><span style="color:#94e2d5;">@@ </span><span style="color:#cdd6f4;">(print_endline </span><span style="color:#a6e3a1;">&quot;Adding...&quot;</span><span style="color:#9399b2;">;</span><span style="color:#cdd6f4;"> x </span><span style="color:#94e2d5;">+</span><span style="color:#cdd6f4;"> y)
+</span></code></pre>
+<p>And we get the same thing...</p>
+<pre style="background-color:#1e1e2e;"><code><span style="color:#cdd6f4;">The sum is:
+</span><span style="color:#cdd6f4;">Adding...
+</span><span style="color:#cdd6f4;">3
+</span></code></pre>
+<p>So we can conclude that in this case the application of <code>add</code> is also referentially transparent, despite having side effects. (Yes, this is different than the normal definition of referential transparency. I'll get to that.) OCaml's problems come in when expressions have no parameters:</p>
+<pre style="background-color:#1e1e2e;"><code class="language-ocaml"><span style="color:#cba6f7;">let </span><span style="color:#fab387;">sayhi </span><span style="color:#94e2d5;">=</span><span style="color:#cdd6f4;"> print_endline </span><span style="color:#a6e3a1;">&quot;Hi!&quot;</span><span style="color:#9399b2;">;
+</span><span style="color:#cdd6f4;">sayhi</span><span style="color:#9399b2;">;
+</span><span style="color:#cdd6f4;">sayhi
+</span></code></pre>
+<p>which only prints <code>Hi!</code> once because the side effects are realized when <code>sayhi</code> is bound. The solution is to give our function at least one parameter, in this case the unit type:</p>
+<pre style="background-color:#1e1e2e;"><code class="language-ocaml"><span style="color:#cba6f7;">let </span><span style="color:#89b4fa;">sayhi </span><span style="color:#eba0ac;">() </span><span style="color:#94e2d5;">=</span><span style="color:#cdd6f4;"> print_endline </span><span style="color:#a6e3a1;">&quot;Hi!&quot;</span><span style="color:#9399b2;">;
+</span><span style="color:#cdd6f4;">sayhi </span><span style="color:#f38ba8;">()</span><span style="color:#9399b2;">;
+</span><span style="color:#cdd6f4;">sayhi </span><span style="color:#f38ba8;">()
+</span></code></pre>
+<p>and now it works as desired. This is because the zero-parameter (nullary) <code>sayhi</code> is a <em>value</em> and the one-parameter (unary) <code>sayhi ()</code> is a <em>function</em>, and <em>functions</em> are referentially transparent in OCaml while <em>variables</em> are not.</p>
+<p>Haskell takes a different approach and ensures that all code is always referentially transparent by handling effects explicitly as values, e.g. monads. The problem on the OCaml side is that we don't have a way in the syntax to express directly the ordering in which side effects should be realized, and instead we have to do this indirectly by controlling when a value is bound. Haskell's semantics, on the other hand, have no concept of evaluation order (though operationally it is specified to be call-by-need), and instead the effect ordering is specified explicitly in the syntax. This allows Haskell to be lazily evaluated and also referentially transparent, as the effects will always happen with the same ordering regardless of when a value is bound.</p>
+<p>The important bit to highlight is that:</p>
+<ul>
+<li>in languages with explicit effects, evaluation order is semantically irrelevant because it doesn't affect the behavior of the program; and</li>
+<li>in languages with implicit side effects, the order in which those effects are realized is determined by the order in which they are evaluated, so evaluation order is semantically important.</li>
+</ul>
+<h2>The other definition of referential transparency</h2>
+<p>For reasons beyond my comprehension, the definition of referential transparency is commonly understood to be along the lines &quot;swap out a function for the <em>value</em> it returns&quot; instead of &quot;swap it out for its definition.&quot; It then becomes imporant what we should consider the <em>value</em> to be, e.g. do we include side effects in the value? For example, consider the following JavaScript:</p>
+<pre style="background-color:#1e1e2e;"><code class="language-js"><span style="color:#cba6f7;">function </span><span style="color:#89b4fa;">add</span><span style="color:#9399b2;">(</span><span style="color:#eba0ac;">x</span><span style="color:#9399b2;">, </span><span style="color:#eba0ac;">y</span><span style="color:#9399b2;">) {
+</span><span style="color:#cdd6f4;">    console</span><span style="color:#94e2d5;">.</span><span style="color:#89b4fa;">log</span><span style="color:#9399b2;">(</span><span style="color:#a6e3a1;">&quot;Adding!&quot;</span><span style="color:#9399b2;">);
+</span><span style="color:#cdd6f4;">    </span><span style="color:#cba6f7;">return </span><span style="color:#cdd6f4;">x </span><span style="color:#94e2d5;">+ </span><span style="color:#cdd6f4;">y</span><span style="color:#9399b2;">;
+</span><span style="color:#9399b2;">}
+</span><span style="color:#cdd6f4;">
+</span><span style="color:#cba6f7;">let </span><span style="color:#cdd6f4;">val </span><span style="color:#94e2d5;">= </span><span style="color:#89b4fa;">add</span><span style="color:#9399b2;">(</span><span style="color:#fab387;">1</span><span style="color:#9399b2;">,</span><span style="color:#fab387;">2</span><span style="color:#9399b2;">);
+</span></code></pre>
+<p>Under this (unfortunately common) definition, we would swap out <code>add</code> with its return value:</p>
+<pre style="background-color:#1e1e2e;"><code class="language-js"><span style="color:#cba6f7;">let </span><span style="color:#cdd6f4;">val </span><span style="color:#94e2d5;">= </span><span style="color:#fab387;">1 </span><span style="color:#94e2d5;">+ </span><span style="color:#fab387;">2</span><span style="color:#9399b2;">;
+</span></code></pre>
+<p>and in doing so would injudiciously remove the side effects (printing <code>Adding!</code>) from the program. I argue that we could just as validly consider the <em>value</em> of <code>add(1, 2)</code> to be:</p>
+<pre style="background-color:#1e1e2e;"><code class="language-js"><span style="color:#9399b2;">((</span><span style="color:#eba0ac;">x</span><span style="color:#9399b2;">, </span><span style="color:#eba0ac;">y</span><span style="color:#9399b2;">) </span><span style="color:#cba6f7;">=&gt; </span><span style="color:#9399b2;">{
+</span><span style="color:#cdd6f4;">    console</span><span style="color:#94e2d5;">.</span><span style="color:#89b4fa;">log</span><span style="color:#9399b2;">(</span><span style="color:#a6e3a1;">&quot;Adding!&quot;</span><span style="color:#9399b2;">);
+</span><span style="color:#cdd6f4;">    </span><span style="color:#cba6f7;">return </span><span style="color:#cdd6f4;">x </span><span style="color:#94e2d5;">+ </span><span style="color:#cdd6f4;">y</span><span style="color:#9399b2;">;
+</span><span style="color:#9399b2;">})(</span><span style="color:#fab387;">1</span><span style="color:#9399b2;">, </span><span style="color:#fab387;">2</span><span style="color:#9399b2;">)
+</span></code></pre>
+<p>which will print <code>Adding!</code> when it is bound to <code>val</code>. JavaScript actually has a name for this pattern, it's called an <a href="https://developer.mozilla.org/en-US/docs/Glossary/IIFE">immediately invoked function expression</a> (IIFE). I argue that the value of a function invocation in JavaScript is its entire invocation, not just what it returns; and so we ought to replace a function invocation with its entire invocation when considering referential transparency, not just the return value. I think the confusion arises because:</p>
+<ol>
+<li>In functional languages, the definition of a function is an expression (the return value), and therefore there is no semantic difference between a function's invocation and its return value. (In imperative languages, functions are a series of statements, not expressions.)</li>
+<li>Therefore in functional languages it's fine to replace a function application with its return value (that is, the expression it returns), but this doesn't extend to imperative languages because functions aren't expressions.</li>
+</ol>
+<p>There is a reason that I switched to JavaScript for this section. I will now repeat the same exercise above in OCaml to highlight the absurdity, since in OCaml functions <em>are</em> expressions. We start with</p>
+<pre style="background-color:#1e1e2e;"><code class="language-ocaml"><span style="color:#cba6f7;">let </span><span style="color:#89b4fa;">add </span><span style="color:#eba0ac;">x y </span><span style="color:#94e2d5;">= </span><span style="color:#cdd6f4;">(print_endline </span><span style="color:#a6e3a1;">&quot;Adding...&quot;</span><span style="color:#9399b2;">;</span><span style="color:#cdd6f4;"> x </span><span style="color:#94e2d5;">+</span><span style="color:#cdd6f4;"> y) </span><span style="color:#cba6f7;">in
+</span><span style="color:#cdd6f4;">print_endline </span><span style="color:#94e2d5;">@@</span><span style="color:#cdd6f4;"> string_of_int </span><span style="color:#94e2d5;">@@</span><span style="color:#cdd6f4;"> add </span><span style="color:#fab387;">1 2
+</span></code></pre>
+<p>If we replace it with the <em>expression</em> that the function returns, we have</p>
+<pre style="background-color:#1e1e2e;"><code class="language-ocaml"><span style="color:#cdd6f4;">print_endline </span><span style="color:#94e2d5;">@@</span><span style="color:#cdd6f4;"> string_of_int </span><span style="color:#94e2d5;">@@ </span><span style="color:#cdd6f4;">(print_endline </span><span style="color:#a6e3a1;">&quot;Adding...&quot;</span><span style="color:#9399b2;">; </span><span style="color:#fab387;">1 </span><span style="color:#94e2d5;">+ </span><span style="color:#fab387;">2</span><span style="color:#cdd6f4;">)
+</span></code></pre>
+<p>If we capriciously drop the first part of the expression, we would write</p>
+<pre style="background-color:#1e1e2e;"><code class="language-ocaml"><span style="color:#cdd6f4;">print_endline </span><span style="color:#94e2d5;">@@</span><span style="color:#cdd6f4;"> string_of_int </span><span style="color:#94e2d5;">@@ </span><span style="color:#fab387;">1 </span><span style="color:#94e2d5;">+ </span><span style="color:#fab387;">2
+</span></code></pre>
+<p>There is no reason to drop the first part of the expression. It's still a part of the expression that yields the return value! While this definition of the term &quot;referential transparency&quot; is valid and not contradictory, it isn't well-motivated or useful. We already have a word to describe functions that have side effects, <em>impure</em>, and if we were to take up this definition of referential transparency it would be completely overshadowed by purity. Referential transparency, as defined in the former section, instead reveals something more subtle and more important about programming language semantics than is revealed by defining it by return value.</p>
+<p>—-</p>
+<h3>Postscript</h3>
+<p>Sometimes the term <em>referential transparency</em> is applied to functions, when really it's a property of <em>expressions</em>, which in this case is the application of the function (or invocation in imperative-land). While this usage is technically incorrect it can be understood as meaning &quot;for every application of the function, its application is referentially transparent.&quot; I have also glossed over some finer points above (e.g., it is not a requirement that imperative languages discriminate between expressions and statements, it is just common) because I didn't want to distract from the main point.<img src="/butterfly.svg" class="butterfly qed"/></p></article><div class="bottom-spacer"></div></main></body></html>
