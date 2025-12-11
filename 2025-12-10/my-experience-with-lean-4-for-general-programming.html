@@ -1,0 +1,111 @@
+<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, height=device-height, initial-scale=1"><link rel="stylesheet" href="/main.css"><title>My experience with Lean 4 for general programming
+</title><link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="shortcut icon" href="/favicon.ico"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="quam serena"><link rel="manifest" href="/site.webmanifest"></head><body><header><h1><a style="all: unset; cursor: pointer" href="/">quam serena</a></h1></header><main><article><p><em>I am currently looking for a job! If you're hiring a new grad in 2026 for for Rust, TypeScript, or React, feel free to shoot me an email at serena (at) quamserena.com.</em></p>
+<h1>My experience with Lean 4 for general programming</h1>
+<p>Lean is a proof assistant used in formalizing mathematics. You can write proofs in Lean code, and then the computer can verify that the mathematical proof is certainly true. While mathematics is its primary domain, it's also a programming language — at its core, Lean is a fully-fledged, mostly self-hosted, pure functional language, with all of the theorem proving machinery built on top. What's cool about this is that you can write your algorithm in Lean, and then also prove that it is correct in Lean — you don't need to hop into a different language or environment to do that. While Lean is well-established within the domain of formal verification, it doesn't have much traction as a general purpose programming language, despite its capabilities and aspirations. I've been hearing a lot of exciting things about Lean from a programming languages design point of view, so I decided to check it out.</p>
+<p>For my first nontrivial project, I started yet another web framework, a reactive HTML library written in Lean. HTML components are first SSR'd in Lean and then contain just enough JavaScript to provide reactivity. I don't expect many people to use the library when (if) it's working; I've been driven primarily because I've found Lean to be super fun to write and have always hated how inefficient React is, and I wanted to challenge myself to write something better. It doesn't make sense to me why React still diffs a VDOM when the code knows, at compile time, what parts are going to change. There are plenty of good no-VDOM libraries like SolidJS which set up all of the reactivity on first render, but they haven't broken React's stranglehold on the ecosystem. The idea with my library is to take an ultra-minimalist approach to what actually gets shipped to the browser: on the server side, you write HTML components in Lean with a small number of reactive stateful variables, then the HTML is generated with the JavaScript alongside it to update it. Anything more substantial would require a rerendering on the server side.</p>
+<h2>Things I like</h2>
+<h3>Lean is a maximalist language</h3>
+<p>You can do whatever you want in this language. This is both a blessing and a curse. You can create new syntax on the fly, including overloading existing syntax and literals (Lean will pick whichever elaboration makes the program compile, so you can e.g. include syntax for number literals for your bespoke number type); use implicit function arguments, and have the compiler infer them; and debug interactively with <code>#check</code> and <code>#eval</code>. The compiler is both incredibly clever and extensible, and you can make it do just about anything you want.</p>
+<h3>Syntax</h3>
+<p>Lean's syntax is clean, easy to understand, and beautiful. It is very similar to Haskell's, with the exception that it has explicit recursion through <code>rec</code> on local definitions. Its imperative <code>do</code> notation is also quite nice as it includes control structures like <code>for</code> and <code>while</code> (which Haskell lacks), allowing you to write individual functions in an imperative style while still maintaining functional purity overall. The groupings and precedence also make sense, unlike OCaml. In terms of readability, it's very readable and contains little punctuation. In Rust, I'd have to write <code>Default::default()</code> in order to get the default value of a type, meanwhile in Lean I can just write <code>default</code>, which is a lot cleaner.</p>
+<h3>Syntax extensions</h3>
+<p>One of the reasons React has such tight lockin is because of JSX. If you're making a new frontend view framework, you have two practical options: either provide custom TypeScript bindings for JSX or create a new filetype (e.g. <code>.svelte</code>) and make a VSCode extension to parse it and forward sections to different LSPs (HTML, JS, CSS) and a Vite plugin to build it. It's mostly the former that happens, given how much work comes from the latter.</p>
+<p>The root of the problem is that JavaScript itself has no way to define syntax extensions natively, so the syntax extensions that do exist are extremely rare (and often poorly supported). JSX is the exception, and you're basically stuck with it and can't modify the syntax. In Lean, on the other hand, you can create new syntax on the fly, meaning that you can use the <code>syntax</code> keyword, define your syntax, and then use it later in the same file, meaning it's super easy to add new stuff to the language. For example, this code:</p>
+<pre style="background-color:#1e1e2e;"><code class="language-lean4"><span style="color:#cdd6f4;">def Greet (name : String) (happy : Bool := false) :=
+</span><span style="color:#cdd6f4;">  if happy then
+</span><span style="color:#cdd6f4;">    &lt;p&gt;&quot;Hey, &quot; (name) &quot;!&quot;&lt;/p&gt;
+</span><span style="color:#cdd6f4;">  else
+</span><span style="color:#cdd6f4;">    &lt;p&gt;&quot;Hey &quot; (name) &quot;...&quot;&lt;/p&gt;
+</span><span style="color:#cdd6f4;">
+</span><span style="color:#cdd6f4;">#eval &lt;Greet &quot;Steve&quot; (happy := true)&gt;&lt;/Greet&gt;
+</span></code></pre>
+<p>shows the string <code>&lt;p&gt;Hey, Steve!&lt;/p&gt;</code>. This is despite Lean having no built-in concept of an HTML component or the angle bracket XML notation — I defined all of that earlier in the same file. For the part that I'm currently working on, I'm embedding JavaScript in my HTML components inside of Lean. I want to generate some TypeScript types from the Lean side, then I believe I can just call Babel during parsing, walk the AST, pluck out the undeclared identifiers and match it up with the <code>Stateful</code>s that are in scope and build the correct JavaScript to update the DOM when the stateful variable changes. Term elaboration has the <code>IO.RealWorld</code> effect, so I think that I'll be able call out to a NodeJS script to run Babel during the elaboration phase of Lean, and the compiled JavaScript will then just be a regular string I can use when generating the HTML (inside of Lean).</p>
+<p>Lean owes its extensible syntax to mathematicians who frequently work with different notations. In math, different notation can make important properties more obvious — for example, in Dirac notation when we re-write a linear form as a bra, it highlights how we form an inner product space and the connection of quantum states to vectors. I think the same thing applies to coding, where it can be said that JSX-like syntax extensions make it obvious what the output HTML will be. Some software developers are irrationally afraid of syntax extensions, but in my experience it's usually pretty clear when someone is using custom syntax vs. the built-in syntax.</p>
+<p>Also, you can control-click the syntax (yes, the <em>syntax</em>) and jump to its definition. I control-clicked on an <code>if</code>-<code>then</code>-<code>else</code> block and then could read its definition of the syntax:</p>
+<pre style="background-color:#1e1e2e;"><code class="language-lean4"><span style="color:#cdd6f4;">@[inherit_doc ite] syntax (name := termIfThenElse)
+</span><span style="color:#cdd6f4;">  ppRealGroup(ppRealFill(ppIndent(&quot;if &quot; term &quot; then&quot;) ppSpace term)
+</span><span style="color:#cdd6f4;">    ppDedent(ppSpace) ppRealFill(&quot;else &quot; term)) : term
+</span><span style="color:#cdd6f4;">
+</span><span style="color:#cdd6f4;">macro_rules
+</span><span style="color:#cdd6f4;">  | `(if $c then $t else $e) =&gt; do
+</span><span style="color:#cdd6f4;">    let mvar ← Lean.withRef c `(?m)
+</span><span style="color:#cdd6f4;">    `(let_mvar% ?m := $c; wait_if_type_mvar% ?m; ite $mvar $t $e)
+</span></code></pre>
+<p>This is because 90% of Lean is written in itself and is self-hosted, so most of it is just included as a file somewhere. We can see that an <code>if</code> block expands to some more syntax, in this case calling the <code>ite</code> function.</p>
+<h3>Metaprogramming</h3>
+<p>The metaprogramming in Lean is phenomenal, as you've seen above. Beyond syntax-to-syntax translations, you can do a lot at the meta-level, including type lookups during elaboration. (Elaboration is a compiler phase in Lean after macro expansion and before compilation to C). You can parse and elaborate anything; you aren't limited to valid Lean tokens.</p>
+<p>We can again thank the mathematicians for this. Tactics, which essentially instruct the computer how to solve a proof for you and automate theorem proving, are implemented through metaprogramming. It is a design goal of the syntax and metaprogramming system to be able to embed DSLs, even if they don't look anything like Lean. As an example, the build system has a <a href="https://github.com/leanprover/lean4/blob/9d4ad1273f6cea397c3066c2c83062a4410d16bf/src/lake/Lake/Toml/ParserUtil.lean">TOML parser</a> written in Lean using the same <code>Lean.Parser</code> metaprogramming machinery to read configs.</p>
+<h3>Everything just works</h3>
+<p>When I was learning Rust, I kept running into issues best summed up as &quot;Ferris says no.&quot; Some features are unimplemented (like doing const operations inside generics), others just aren't allowed (a la the orphan rule). The type system just didn't compose the way that I expected. Most of the restrictions on Rust's type system come from requiring safety and maximizing performance — in Lean, performance is good but it isn't maximized for; the language opts for slower solutions when they allow for more benefits.</p>
+<h2>Things I don't like</h2>
+<h3>Lack of documentation</h3>
+<p>This is mostly because of the fact that Lean is still a young language. I expect this to change as it matures, but as of right now a lot of stuff is undocumented (or hard to find). The metaprogramming book is in a particularly sorry state, and I had to resort to reading the source code for a lot of parsing tasks. While programming I usually have the reference manual, mathlib docs, source code, functional programming in Lean (FPIL) and theorem proving in Lean (TPIL) books open, and I switch between them all. It's nice that in Lean you can control click anything, go to the definition, and just start reading.</p>
+<h3>Obscure errors</h3>
+<p>For example while working on my library I was greeted by this lovely error:</p>
+<pre style="background-color:#1e1e2e;"><code class="language-lean4"><span style="color:#cdd6f4;">Application type mismatch: The argument
+</span><span style="color:#cdd6f4;">  do
+</span><span style="color:#cdd6f4;">    let info ← MonadRef.mkInfoFromRefPos
+</span><span style="color:#cdd6f4;">    let scp ← getCurrMacroScope
+</span><span style="color:#cdd6f4;">    let quotCtx ← MonadQuotation.getContext
+</span><span style="color:#cdd6f4;">    pure
+</span><span style="color:#cdd6f4;">        {
+</span><span style="color:#cdd6f4;">          raw :=
+</span><span style="color:#cdd6f4;">            Syntax.ident info &quot;Derived&quot;.toSubstring&#39; (addMacroScope quotCtx `Derived scp)
+</span><span style="color:#cdd6f4;">              [Syntax.Preresolved.decl `Html.Derived [], Syntax.Preresolved.namespace `Html.Derived] }
+</span><span style="color:#cdd6f4;">has type
+</span><span style="color:#cdd6f4;">  ?m.45 (TSyntax `term)
+</span><span style="color:#cdd6f4;">but is expected to have type
+</span><span style="color:#cdd6f4;">  Syntax
+</span><span style="color:#cdd6f4;">in the application
+</span><span style="color:#cdd6f4;">  @elabTerm do
+</span><span style="color:#cdd6f4;">    let info ← MonadRef.mkInfoFromRefPos
+</span><span style="color:#cdd6f4;">    let scp ← getCurrMacroScope
+</span><span style="color:#cdd6f4;">    let quotCtx ← MonadQuotation.getContext
+</span><span style="color:#cdd6f4;">    pure
+</span><span style="color:#cdd6f4;">        {
+</span><span style="color:#cdd6f4;">          raw :=
+</span><span style="color:#cdd6f4;">            Syntax.ident info &quot;Derived&quot;.toSubstring&#39; (addMacroScope quotCtx `Derived scp)
+</span><span style="color:#cdd6f4;">              [Syntax.Preresolved.decl `Html.Derived [], Syntax.Preresolved.namespace `Html.Derived] }
+</span></code></pre>
+<p>None of this code that I wrote (or understand); it's expanding the (built-in) macro for quasiquotations. The important bit is</p>
+<pre style="background-color:#1e1e2e;"><code><span style="color:#cdd6f4;">has type
+</span><span style="color:#cdd6f4;">  ?m.45 (TSyntax `term)
+</span><span style="color:#cdd6f4;">but is expected to have type
+</span><span style="color:#cdd6f4;">  Syntax
+</span></code></pre>
+<p>which tells us that this code is returning <em>something</em> containing a <code>TSyntax 'term</code>, but it should be <code>Syntax</code>. The <code>?m</code> part means that Lean was unable to figure out (synthesize) the type, and so it can't fully name the type of the expression. It turns out that <code>?m</code> is actually a monad, but its concrete type hasn't been nailed down. We can solve this error trivially by taking the value out of the monad, but it wasn't clear to me what any of this meant before I understood how Lean works. (I was trying to figure out how to coerce <code>TSyntax</code> to <code>Syntax</code>, but Lean does that automatically).</p>
+<h3>Multiple ways to show something's true</h3>
+<p>From what I understand, there are three separate ways to require that something is true in Lean:</p>
+<ol>
+<li>Define your type to only hold values that you like</li>
+<li>Pass in a prop that shows your desired hypothesis is true</li>
+<li>Require that you are able to synthesize a typeclass showing that it is true</li>
+</ol>
+<p>While these probably all have their use cases, I am not experienced enough to know which to pick when. This kind of thing gives Lean a high learning curve; I like it when languages clearly signpost the &quot;right thing to do&quot; (like Rust). That being said, I don't know how much could be improved here given that Lean needs to be a capable theorem prover. As an example of the above, consider if you want to require that an argument <code>n : Nat</code> to your function is nonzero. If you have a look over options, you can do any of:</p>
+<ol>
+<li>Restrict to the type <code>PNat</code>,</li>
+<li>pass in a prop <code>h</code> stating <code>n != 0</code>,</li>
+<li>or use an instance implicit <code>[NeZero n]</code> in the function definition.</li>
+</ol>
+<p>While 1. seems interesting, <code>PNat</code> is in <code>mathlib</code> (the monolithic library containing all of mathematics), and it isn't a part of <code>Lean</code> like <code>Nat</code> or <code>Fin n</code> are. We have a choice here of using the <code>mathlib</code> version or writing our own with</p>
+<pre style="background-color:#1e1e2e;"><code class="language-lean4"><span style="color:#cdd6f4;">abbrev PNat := { n : Nat // n &gt; 0 }
+</span></code></pre>
+<p>I'm not sure if it's subject to the same optimizing special treatment that <code>Nat</code> is (which is special-cased into an unsigned integer when compiled; in the source code it's defined inductively), and also variables only ever have one type in Lean so if it's a <code>PNat</code> then it isn't a <code>Nat</code> — you'll have to convert back and forth (but this usually isn't too bad and is often implicit). 2. is fine, but I found that 3. typically is the most ergonomic, since all of the types stay the same, and you also get access to all of the associated theorems. But if I wanted <code>n != 1</code> instead, then I'd have to reevaluate because <code>NeOne</code> isn't a typeclass.</p>
+<h3>Default values</h3>
+<p>Lean uses a lot of default values. From what I understand, these are required for logical consistency that functions return a value of the type, even if there's an error. There is some weirdness like <code>Nat.toDigits</code> printing asterisks <code>*</code> if the digits are greater than <code>0xf</code>, or the default char being <code>'A'</code> of all things (I think I would have preferred a space or null). I was very confused about why my code was printing asterisks until I realized that <code>.toDigits</code> takes the base first for some reason, so you would write <code>16.toDigits 64</code> to put <code>64</code> into <code>16</code> (I really feel like the arguments should be reversed).</p>
+<h3>Redundant notation</h3>
+<p>Lean 4, being a language for mathematicians, allows for non-ASCII symbols, which is fine by itself I think. My problem is that a lot of symbols are defined twice, for example the type of natural numbers is both <code>Nat</code> and <code>ℕ</code>, an arrow can be either <code>-&gt;</code> or <code>→</code>, etc. I have font ligatures on my computer, so personally I find the ASCII version a lot easier to read than the smaller unicode characters. Actually typing the unicode characters isn't hard since they have the same escapes as LaTeX, so if you know how to type LaTeX math you'll be fine. For example <code>·</code> is <code>\cdot</code>, <code>α</code> is <code>\alpha</code>, etc.</p>
+<h3>Microsoft's hold</h3>
+<p>A lot of the Lean ecosystem is based around Microsoft and Microsoft products.</p>
+<ul>
+<li>Many of the technical papers have come out of Microsoft Research.</li>
+<li>A lot of the funding comes from Microsoft.</li>
+<li>Microsoft holds copyright over much of the Functional Programming in Lean book.</li>
+<li>The setup guide only guides you if you have VS Code, and the setup link opens inside of VS Code.</li>
+<li>Packages are indexed on GitHub, so if you want it to show up you need to put your code on GitHub.</li>
+</ul>
+<p>Lean has tight LSP support, and you want to be able to type all of the symbols, so the choice of editor and extensions is nontrivial. The VS Code extension is the recommended way to write Lean. (I hear emacs is also pretty good, and I see neovim and JetBrains both have extensions). It's by no way required that you use Microsoft's services, but there is definitely an invisible hand that pushes you into writing code in Microsoft's editor and publishing it on Microsoft's code-sharing platform. I wish that Lean was a bit more agnostic and independent in that regard, though it isn't as bad as Kotlin or Swift.</p>
+<h2>Takeaways</h2>
+<p>Lean is an extraordinary capable programming language in addition to being a theorem prover. Despite its aspirations, however, I think that it's probably too complicated for any semblence of popularity. I have a mathy background and still found it difficult, so for programmers without that I think it would be challenging. I also don't think it aligns well with the needs of many programmers (most people want code that is dead simple and boring; Lean can get interesting).</p>
+<p>There is a reason that Java, Python, and Go (all enterprise languages) don't have syntax extensions or expressive type systems. I think that one of the draws of Lean for these types would be to prove nontrivial things about your program, and Lean can do this in a lot of cases (like proving every array access is valid) but for more complicated cases it is more of a function of how much time you're willing to sink into writing the proof. In some cases, people have changed a correct implementation into an incorrect one in order to make a proof easier, which is quite bad. In my very limited experience, I've seen (and experienced) that writing provable code leads to it being less ergonomic and less idiomatic. A lot of the machinery for dealing with things programmers care about (e.g. string sanitation) simply isn't written yet, so it's a bit harder than if you were working with things that mathematicians care about (e.g. numbers).</p>
+<p>Still, I thoroughly enjoyed learning the Lean that I have so far. It's a very fun, very capable language, and it was so foreign to me that I felt like a kid learning how to code again. It's a very interesting language for general programming, and the next time I have to write a parser I might just write it in Lean.<img src="/butterfly.svg" class="butterfly qed"/></p></article><div class="bottom-spacer"></div></main></body></html>
